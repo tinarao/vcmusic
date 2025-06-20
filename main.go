@@ -6,10 +6,20 @@ import (
 	"os"
 	"time"
 
+	"encoding/json"
+
 	vosk "github.com/alphacep/vosk-api/go"
 	"github.com/eiannone/keyboard"
 	"github.com/gordonklaus/portaudio"
 )
+
+type partialObj struct {
+	Partial string `json:"partial"`
+}
+
+type resultObj struct {
+	Text string `json:"text"`
+}
 
 const (
 	modelPath       = "model"
@@ -226,11 +236,21 @@ func processPhrase(recognizer *vosk.VoskRecognizer, data []float32) {
 
 	if recognizer.AcceptWaveform(bytesbuff) == 0 {
 		if result := recognizer.Result(); result != "" {
-			fmt.Printf("Распознанная фраза: %s\n", result)
+			var res resultObj
+			if err := json.Unmarshal([]byte(result), &res); err == nil {
+				fmt.Println(res.Text)
+			} else {
+				fmt.Println(result)
+			}
 		}
 	} else {
 		if partial := recognizer.PartialResult(); partial != "" {
-			fmt.Printf("Частичный результат: %s\n", partial)
+			var part partialObj
+			if err := json.Unmarshal([]byte(partial), &part); err == nil {
+				fmt.Println(part.Partial)
+			} else {
+				fmt.Println(partial)
+			}
 		}
 	}
 }
